@@ -2,67 +2,100 @@ package inmemory.queue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.LinkedList;
+import org.json.simple.JSONObject;
+import java.util.Random;
 
-public class Producer implements Subject {
+public class Producer{
 
-	private List<Observer> 	observers;
-	private String 			message;//chang it to queue
-	private boolean 		changed;
+	private List<Topic> 		topics;
+	public Queue<JSONObject> 	messageQueue;
 
-	private final Object MUTEX= new Object();
-	
+	private int 				queueSize;
+
+	Object lock = new Object();
+
 	public Producer(){
-		this.observers = new ArrayList<>();
+		this.topics 		= new ArrayList<>();
+		this.messageQueue	= new LinkedList();
+		queueSize			= 3;
 	}
 
-	@Override
-	public void register(Observer obj) {
-		if(obj == null){
-			throw new NullPointerException("Null Observer");
+	public void addTopic(Topic tp) {
+	
+		if(tp == null){
+			throw new NullPointerException("Null topic");
 		}
-		synchronized (MUTEX) {
-			if(!observers.contains(obj)) {
-				observers.add(obj);
-			}
-		}
-	}
-
-	@Override
-	public void unregister(Observer obj) {
-		synchronized (MUTEX) {
-			observers.remove(obj);
-		}
-	}
-
-	@Override
-	public void notifyObservers() {
-		List<Observer> observersLocal = null;
 		
-		//synchronization is used to make sure any observer registered after message is received is not notified
-		synchronized (MUTEX) {
-			if (!changed)
-				return;
-			observersLocal = new ArrayList<>(this.observers);
-			this.changed=false;
+		if(!topics.contains(tp)) {
+			topics.add(tp);
 		}
-
-		for (Observer obj : observersLocal) {
-			obj.consume();
-		}
-
+	
 	}
 
-	@Override
-	public Object getUpdate(Observer obj) {
-		return this.message;
+	public void checkForTopics() throws InterruptedException{
+
+		JSONObject jsonObject = null;
+
+		while(true){
+
+			synchronized(lock){
+
+				while (messageQueue.size() == 0){
+					System.out.println("Waiting for producerrrrrrrrrrr");
+					lock.wait();					
+				}
+
+				jsonObject = (JSONObject) messageQueue.poll();
+	            lock.notify();
+
+			}
+
+	        Topic topic 			 = (Topic) jsonObject.get("topic");
+	        String value			 = (String) jsonObject.get("value");
+	        List<Observer> observers = topic.observers;
+
+	        for (Observer obj : observers) {
+				obj.consume(value);
+			}             
+
+		}
+             
 	}
 	
-	//method to post message to the topic
-	public void produce(String msg){
-		System.out.println("New value from Producer:"+msg);
-		this.message=msg;
-		this.changed=true;
-		notifyObservers();
+	public void produce() throws InterruptedException{
+
+		int value = 0;		
+
+        while (true){   
+
+			synchronized (lock){
+
+				while (messageQueue.size() == queueSize){
+					System.out.println("Waiting for consumers");
+					lock.wait();
+				}
+
+				Random rand   = new Random();
+
+			    int randomNum = rand.nextInt((2 - 0) + 0) + 0;
+
+	            System.out.println("Producer  :: "+randomNum);
+
+	            JSONObject jsonObject = new JSONObject();
+                jsonObject.put("topic", this.topics.get(randomNum));
+                jsonObject.put("value", "Do it.");
+
+	            this.messageQueue.add(jsonObject);
+
+	            lock.notify();
+
+	        }
+
+        }
+		
 	}
+
 
 }
