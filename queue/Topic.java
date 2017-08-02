@@ -11,8 +11,6 @@ public class Topic implements Subject {
 
 	public List<Observer> observers;
 
-	private Producer producer;
-
 	private final Object MUTEX = new Object();
 	
 	public Topic(String topicName){
@@ -40,20 +38,5 @@ public class Topic implements Subject {
 		}
 	}
 
-	@Override
-	public void notifyObservers() {
-			           	                                     
-        List<Observer> observersLocal = new ArrayList<>(this.observers);
-
-        for (Observer obj : observersLocal) {
-			obj.consume();
-		}
-	  
-	}
-
-	@Override
-	public Object getRelavantData(Observer obj) {
-		return producer.messageQueue.poll();
-	}
 	
 }

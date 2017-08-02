@@ -43,7 +43,7 @@ public class Producer{
 			synchronized(lock){
 
 				while (messageQueue.size() == 0){
-					System.out.println("Waiting for producerrrrrrrrrrr");
+					System.out.println("Waiting for producer");
 					lock.wait();					
 				}
 
@@ -54,10 +54,29 @@ public class Producer{
 
 	        Topic topic 			 = (Topic) jsonObject.get("topic");
 	        String value			 = (String) jsonObject.get("value");
-	        List<Observer> observers = topic.observers;
 
-	        for (Observer obj : observers) {
-				obj.consume(value);
+	        List<Observer> observers = topic.observers;
+	        List<Observer> alreadyConsumed = new ArrayList();
+	       
+	        Consumer conObj = null;
+	        
+	        for (Observer observerObj : observers) {
+
+	        	if(!alreadyConsumed.contains(observerObj)){
+
+	        		conObj = (Consumer) observerObj;
+
+	        		for (Observer prerequisitesObj : conObj.getPrerequisites()) {	  
+
+						prerequisitesObj.consume(value);
+						alreadyConsumed.add(prerequisitesObj);
+
+					}
+
+					observerObj.consume(value);	
+	        
+	        	}
+	        	
 			}             
 
 		}
@@ -85,7 +104,7 @@ public class Producer{
 
 	            JSONObject jsonObject = new JSONObject();
                 jsonObject.put("topic", this.topics.get(randomNum));
-                jsonObject.put("value", "Do it.");
+                jsonObject.put("value", "Just Do it.");
 
 	            this.messageQueue.add(jsonObject);
 
