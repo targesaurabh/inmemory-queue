@@ -1,0 +1,4 @@
+Manifest-Version: 1.0 
+Created-By: tony example
+Class-Path: test.jar json-simple-1.1.jar
+Main-Class: inmemory/queue/QueueSystem

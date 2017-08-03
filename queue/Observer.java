@@ -2,7 +2,7 @@ package inmemory.queue;
 
 public interface Observer {
 	
-	//method to update the observer, used by subject
+	//method to consume the produced data
 	public void consume(String value);
 	
 }
